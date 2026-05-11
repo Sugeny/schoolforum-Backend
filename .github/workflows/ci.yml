@@ -9,6 +9,7 @@ on:
 env:
   JAVA_VERSION: '17'
   DISTRIBUTION: 'temurin'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -38,6 +39,7 @@ jobs:
       - name: Publish test results
         uses: dorny/test-reporter@v1
         if: always()
+        continue-on-error: true
         with:
           name: Maven Test Results
           path: target/surefire-reports/*.xml
