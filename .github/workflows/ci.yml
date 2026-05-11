@@ -67,7 +67,10 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Save image as tar
-        run: docker save -o image.tar ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker save -o image.tar "$IMAGE_TAG"
 
       - name: Push Docker image
         uses: docker/build-push-action@v6
@@ -80,6 +83,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Upload docker-compose.yml
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -89,6 +93,7 @@ jobs:
           target: /opt/schoolforum/
 
       - name: Upload image to server
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -98,6 +103,7 @@ jobs:
           target: /opt/schoolforum/
 
       - name: Deploy via SSH
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
