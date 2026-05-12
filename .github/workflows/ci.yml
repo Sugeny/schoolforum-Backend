@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: sugery/schoolforum-backend
+  IMAGE_NAME: sugeny/schoolforum-backend
 
 jobs:
   test:
