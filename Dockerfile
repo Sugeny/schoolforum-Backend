@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-alpine AS build
+FROM docker.m.daocloud.io/eclipse-temurin:17-jdk-alpine AS build
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN chmod +x mvnw && ./mvnw dependency:go-offline --batch-mode
 COPY src src
 RUN ./mvnw package -DskipTests --batch-mode
 
-FROM eclipse-temurin:17-jre-alpine
+FROM docker.m.daocloud.io/eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
