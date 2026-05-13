@@ -2,7 +2,7 @@ server:
   port: 8085
 
 manticore:
-  host: ${MANTICORE_HOST:http://127.0.0.1}
+  host: ${MANTICORE_HOST:http://85.137.245.41}
   port: ${MANTICORE_PORT:9308}
 
 spring:

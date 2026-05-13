@@ -33,10 +33,17 @@ public class SearchAnalyticsInterceptor implements HandlerInterceptor {
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         String requestURI = request.getRequestURI();
 
-        if ((requestURI.equals("/search") || requestURI.startsWith("/search/")) && !requestURI.contains("/sync") && !requestURI.contains("/index") && !requestURI.contains("/health")) {
+        if ((requestURI.equals("/search") || requestURI.startsWith("/search/"))
+                && !requestURI.contains("/sync") && !requestURI.contains("/index") && !requestURI.contains("/health")) {
+
             String query = request.getParameter("query");
             if (query != null && !query.trim().isEmpty()) {
                 recordOrIncrement(query.trim());
+            }
+
+            String prefix = request.getParameter("prefix");
+            if (prefix != null && !prefix.trim().isEmpty()) {
+                recordOrIncrement(prefix.trim());
             }
         }
     }
@@ -102,9 +109,9 @@ public class SearchAnalyticsInterceptor implements HandlerInterceptor {
                         "CREATE TABLE " + PopularQueryDocument.INDEX_NAME + " ("
                                 + "keyword TEXT, "
                                 + "count BIGINT"
-                                + ") charset_table = 'chinese' morphology = 'icu_chinese'",
+                                + ") charset_table = '0..9, A..Z->a..z, _, a..z, chinese' morphology = 'icu_chinese' min_prefix_len = '1'",
                         true);
-                log.info("Created popular_queries index with ICU Chinese morphology");
+                log.info("Created popular_queries index with Chinese+English charset, ICU morphology and min_prefix_len=1");
             } else {
                 throw e;
             }

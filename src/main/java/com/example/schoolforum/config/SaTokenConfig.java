@@ -94,6 +94,8 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 "/search/smart",
                 "/search/keywords",
                 "/search/health",
+                "/search/suggest",
+                "/search",
 
                 // 统计计数 - 公开接口
                 "/count",

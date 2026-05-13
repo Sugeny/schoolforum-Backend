@@ -1,7 +1,9 @@
 package com.example.schoolforum.service.impl;
 
 import com.example.schoolforum.component.PostQueryHelper;
+import com.example.schoolforum.mapper.PostsMapper;
 import com.example.schoolforum.mapper.UsersMapper;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.example.schoolforum.pojo.Posts;
 import com.example.schoolforum.pojo.Users;
 import com.example.schoolforum.pojo.document.PopularQueryDocument;
@@ -39,10 +41,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
 
+    private static final String POPULAR_QUERIES_DDL =
+            "CREATE TABLE " + PopularQueryDocument.INDEX_NAME + " ("
+                    + "keyword TEXT, "
+                    + "count BIGINT"
+                    + ") charset_table = '0..9, A..Z->a..z, _, a..z, chinese' morphology = 'icu_chinese' min_prefix_len = '1'";
+
     private final IndexApi indexApi;
     private final SearchApi searchApi;
     private final UtilsApi utilsApi;
     private final PostQueryHelper postQueryHelper;
+    private final PostsMapper postsMapper;
     private final UsersMapper usersMapper;
 
     @Override
@@ -100,6 +109,13 @@ public class SearchServiceImpl implements SearchService {
     @Override
     public List<KeywordSuggestion> getKeywordSuggestions(String prefix, int limit) {
         try {
+            ensurePopularQueriesIndex();
+        } catch (ApiException e) {
+            log.error("Failed to create popular queries index: {}", e.getMessage(), e);
+            return new ArrayList<>();
+        }
+
+        try {
             SearchRequest searchRequest = new SearchRequest();
             searchRequest.setIndex(PopularQueryDocument.INDEX_NAME);
 
@@ -110,12 +126,12 @@ public class SearchServiceImpl implements SearchService {
             searchRequest.setQuery(queryMap);
 
             searchRequest.setLimit(limit);
-            searchRequest.setSort(new ArrayList<>(List.of("count:desc")));
+            searchRequest.setSort(new ArrayList<>(List.of(Map.of("count", "desc"))));
 
             SearchResponse response = searchApi.search(searchRequest);
             List<?> rawHits = response.getHits().getHits();
 
-            return rawHits.stream()
+            List<KeywordSuggestion> suggestions = rawHits.stream()
                     .map(rawHit -> {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> hit = (Map<String, Object>) rawHit;
@@ -133,9 +149,50 @@ public class SearchServiceImpl implements SearchService {
                                 .build();
                     })
                     .collect(Collectors.toList());
+
+            if (!suggestions.isEmpty()) {
+                return suggestions;
+            }
+
+            return getFallbackSuggestionsFromPosts(prefix, limit);
         } catch (Exception e) {
             log.debug("Failed to get keyword suggestions: {}", e.getMessage());
             return new ArrayList<>();
+        }
+    }
+
+    private List<KeywordSuggestion> getFallbackSuggestionsFromPosts(String prefix, int limit) {
+        QueryWrapper wrapper = QueryWrapper.create()
+                .select("DISTINCT title")
+                .from(Posts.class)
+                .likeLeft("title", prefix)
+                .limit(limit);
+        return postsMapper.selectListByQueryAs(wrapper, String.class)
+                .stream()
+                .map(title -> KeywordSuggestion.builder()
+                        .keyword(title)
+                        .count(0L)
+                        .score(0.0)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private void ensurePopularQueriesIndex() throws ApiException {
+        try {
+            SearchRequest testRequest = new SearchRequest();
+            testRequest.setIndex(PopularQueryDocument.INDEX_NAME);
+            Map<String, Object> queryMap = new HashMap<>();
+            queryMap.put("match_all", null);
+            testRequest.setQuery(queryMap);
+            testRequest.setLimit(0);
+            searchApi.search(testRequest);
+        } catch (ApiException e) {
+            if (e.getCode() == 404) {
+                utilsApi.sql(POPULAR_QUERIES_DDL, true);
+                log.info("Created popular_queries index with ICU Chinese morphology");
+            } else {
+                throw e;
+            }
         }
     }
 
@@ -245,13 +302,13 @@ public class SearchServiceImpl implements SearchService {
                         + "comment_count INTEGER, "
                         + "favorite_count INTEGER, "
                         + "cover_image STRING, "
-                        + "is_pinned BOOLEAN, "
-                        + "is_essential BOOLEAN, "
+                        + "is_pinned INTEGER, "
+                        + "is_essential INTEGER, "
                         + "created_at BIGINT, "
                         + "updated_at BIGINT"
-                        + ") charset_table = 'chinese' morphology = 'icu_chinese'",
+                        + ") charset_table = '0..9, A..Z->a..z, _, a..z, chinese' morphology = 'icu_chinese'",
                 true);
-        log.info("Created posts index with ICU Chinese morphology");
+        log.info("Created posts index with Chinese+English charset and ICU morphology");
     }
 
     private void createUsersIndex() throws ApiException {
@@ -263,11 +320,11 @@ public class SearchServiceImpl implements SearchService {
                         + "avatar_url STRING, "
                         + "bio TEXT, "
                         + "role INTEGER, "
-                        + "is_active BOOLEAN, "
+                        + "is_active INTEGER, "
                         + "created_at BIGINT"
-                        + ") charset_table = 'chinese' morphology = 'icu_chinese'",
+                        + ") charset_table = '0..9, A..Z->a..z, _, a..z, chinese' morphology = 'icu_chinese'",
                 true);
-        log.info("Created users index with ICU Chinese morphology");
+        log.info("Created users index with Chinese+English charset and ICU morphology");
     }
 
     private void insertPostDocument(PostDocument doc) {

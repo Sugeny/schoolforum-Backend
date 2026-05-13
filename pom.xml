@@ -129,12 +129,24 @@
             <groupId>me.zhyd.oauth</groupId>
             <artifactId>JustAuth</artifactId>
             <version>1.16.7</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.alibaba</groupId>
+                    <artifactId>fastjson</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Manticore Search -->
         <dependency>
             <groupId>com.manticoresearch</groupId>
             <artifactId>manticoresearch</artifactId>
             <version>5.0.0</version>
+        </dependency>
+        <!-- JAX-RS API（Manticore Search SDK 的 Jersey 自动发现组件需要 javax.ws.rs 类） -->
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.1.1</version>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
