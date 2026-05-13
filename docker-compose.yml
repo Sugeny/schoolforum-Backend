@@ -29,6 +29,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
       - SPRING_PROFILES_ACTIVE=prod
+      - SERVER_ADDRESS=0.0.0.0
       - JAVA_OPTS=-Xms256m -Xmx512m
       - MANTICORE_HOST=${MANTICORE_HOST:-http://manticore}
       - MANTICORE_PORT=${MANTICORE_PORT:-9308}
