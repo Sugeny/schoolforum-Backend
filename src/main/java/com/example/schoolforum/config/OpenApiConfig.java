@@ -66,7 +66,7 @@ public class OpenApiConfig {
     }
 
     @Bean
-    public GroupedOpenApi searchApi() {
+    public GroupedOpenApi searchGroupApi() {
         return GroupedOpenApi.builder()
                 .group("搜索管理")
                 .pathsToMatch("/search/**")
