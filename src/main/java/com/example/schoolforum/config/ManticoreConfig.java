@@ -32,7 +32,7 @@ public class ManticoreConfig {
         return new IndexApi(apiClient);
     }
 
-    @Bean
+    @Bean("searchApi")
     public SearchApi manticoreSearchApi(ApiClient apiClient) {
         return new SearchApi(apiClient);
     }
