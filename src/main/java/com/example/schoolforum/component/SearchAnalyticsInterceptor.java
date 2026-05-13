@@ -1,6 +1,7 @@
 package com.example.schoolforum.component;
 
 import com.example.schoolforum.pojo.document.PopularQueryDocument;
+import com.example.schoolforum.service.impl.SearchServiceImpl;
 import com.manticoresearch.client.ApiException;
 import com.manticoresearch.client.api.IndexApi;
 import com.manticoresearch.client.api.SearchApi;
@@ -105,12 +106,7 @@ public class SearchAnalyticsInterceptor implements HandlerInterceptor {
             searchApi.search(testRequest);
         } catch (ApiException e) {
             if (e.getCode() == 404) {
-                utilsApi.sql(
-                        "CREATE TABLE " + PopularQueryDocument.INDEX_NAME + " ("
-                                + "keyword TEXT, "
-                                + "count BIGINT"
-                                + ") charset_table = '0..9, A..Z->a..z, _, a..z, chinese' morphology = 'icu_chinese' min_prefix_len = '1'",
-                        true);
+                utilsApi.sql(SearchServiceImpl.POPULAR_QUERIES_DDL, true);
                 log.info("Created popular_queries index with Chinese+English charset, ICU morphology and min_prefix_len=1");
             } else {
                 throw e;

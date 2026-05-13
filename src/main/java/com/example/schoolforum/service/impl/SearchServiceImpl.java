@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
 
-    private static final String POPULAR_QUERIES_DDL =
+    public static final String POPULAR_QUERIES_DDL =
             "CREATE TABLE " + PopularQueryDocument.INDEX_NAME + " ("
                     + "keyword TEXT, "
                     + "count BIGINT"
