@@ -64,7 +64,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
     private final ObjectMapper objectMapper;
 
     @Value("${spring.mail.username}")
-    private String fromEmail;
+    private String mailUsername;
 
     private static final long CAPTCHA_EXPIRE_TIME = 5;
     private static final String CAPTCHA_PREFIX = "captcha:";
