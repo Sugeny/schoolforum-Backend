@@ -1,6 +1,8 @@
 server:
   address: ${SERVER_ADDRESS:0.0.0.0}
   port: 8085
+  servlet:
+    context-path: /api
 
 manticore:
   host: ${MANTICORE_HOST:http://127.0.0.1}
@@ -50,7 +52,7 @@ oauth:
   github:
     client-id: ${GITHUB_CLIENT_ID:}
     client-secret: ${GITHUB_CLIENT_SECRET:}
-    redirect-uri: ${GITHUB_REDIRECT_URI:http://85.137.245.41:8085/oauth/callback/github}
+    redirect-uri: ${GITHUB_REDIRECT_URI:http://85.137.245.41:8085/api/oauth/callback/github}
 
 springdoc:
   swagger-ui:
