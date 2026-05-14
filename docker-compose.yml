@@ -20,7 +20,7 @@ services:
       start_period: 15s
 
   schoolforum:
-    image: ghcr.io/sugeny/schoolforum-backend:latest
+    image: ghcr.io/suguny/schoolforum-backend:latest
     container_name: schoolforum
     restart: always
     env_file:
