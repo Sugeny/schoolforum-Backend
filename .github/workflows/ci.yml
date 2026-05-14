@@ -133,6 +133,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Copy docker-compose and nginx config to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DOCKER_HOST }}
+          username: ${{ secrets.DOCKER_USER }}
+          key: ${{ secrets.DOCKER_SSH_KEY }}
+          port: ${{ secrets.DOCKER_PORT || 22 }}
+          source: docker-compose.yml,nginx/
+          target: /opt/schoolforum/
+          overwrite: true
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -143,31 +154,22 @@ jobs:
           script_stop: true
           script: |
             set -e
-            cd /opt/schoolforum || mkdir -p /opt/schoolforum && cd /opt/schoolforum
+            cd /opt/schoolforum
 
-            echo "=== Force cleaning up old containers ==="
-            if [ -f docker-compose.yml ]; then
-              docker compose down --remove-orphans --timeout 10 || true
-            fi
-            docker rm -f schoolforum 2>/dev/null || true
+            echo "=== Stopping old containers ==="
+            docker compose down --remove-orphans --timeout 10 2>/dev/null || true
+            docker rm -f schoolforum schoolforum-nginx schoolforum-certbot 2>/dev/null || true
             docker network prune -f 2>/dev/null || true
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
 
+            echo "=== Pulling images ==="
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            docker pull nginx:alpine
 
-            if [ -f docker-compose.yml ]; then
-              docker compose up -d
-            else
-              docker run -d \
-                --name schoolforum \
-                --restart always \
-                --network host \
-                -e TZ=Asia/Shanghai \
-                -e SPRING_PROFILES_ACTIVE=prod \
-                -v /var/log/schoolforum:/var/log/schoolforum \
-                ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            fi
+            echo "=== Starting services ==="
+            docker compose up -d
 
             docker image prune -f
-            echo "Deploy completed successfully"
+            echo "=== Deploy completed ==="
+            docker compose ps
