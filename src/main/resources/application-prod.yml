@@ -55,7 +55,17 @@ oauth:
 springdoc:
   swagger-ui:
     try-it-out-enabled: false
-
+sa-token:
+  token-name: Authorization    # 从 Authorization 头读取
+  token-prefix: Bearer         # 自动去掉 Bearer 前缀，只保留后面的 JWT
+  timeout: 604800
+  active-timeout: -1
+  is-concurrent: true
+  is-share: true
+  is-log: false
+  is-read-header: true
+  is-read-cookie: true
+  jwt-secret-key: ${JWT_SECRET_KEY:schoolforum-sa-token-jwt-secret-key-2026}
 logging:
   level:
     com.example.schoolforum: info
