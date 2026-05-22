@@ -5,6 +5,7 @@ import com.example.schoolforum.exception.BusinessException;
 import com.example.schoolforum.mapper.CategoriesMapper;
 import com.example.schoolforum.mapper.PostsMapper;
 import com.example.schoolforum.pojo.Categories;
+import com.example.schoolforum.pojo.Posts;
 import com.example.schoolforum.service.CategoriesService;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.util.UpdateEntity;
@@ -144,7 +145,7 @@ public class CategoriesServiceImpl extends ServiceImpl<CategoriesMapper, Categor
         }
 
         QueryWrapper countWrapper = QueryWrapper.create()
-                .where("category_id = {0}", categoryId);
+                .where(Posts::getCategoryId).eq(categoryId);
 
         long count = postsMapper.selectCountByQuery(countWrapper);
 
