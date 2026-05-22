@@ -335,7 +335,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
     @Override
     public Posts getPostWithViewCount(Long postId, boolean increment) {
         QueryWrapper wrapper = postQueryHelper.buildBaseQueryWithRelations()
-                .where("p.id = ?", postId);
+                .where("p.id = {0}", postId);
 
         Posts post = postsMapper.selectOneByQuery(wrapper);
         if (post == null) {
@@ -606,7 +606,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
         List<Long> categoryIds = getCategoryIds(categoryId);
 
         QueryWrapper wrapper = postQueryHelper.buildBaseQueryWithRelations()
-                .where("p.is_essential = ?", EssentialStatus.ESSENTIAL.getCode())
+                .where("p.is_essential = {0}", EssentialStatus.ESSENTIAL.getCode())
                 .orderBy("p.is_pinned", false)
                 .orderBy("p.created_at", false);
 
@@ -623,7 +623,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
     @Override
     public Page<Posts> listByAuthor(Long authorId, int pageNumber, int pageSize) {
         QueryWrapper wrapper = postQueryHelper.buildBaseQueryWithRelations()
-                .where("p.author_id = ?", authorId)
+                .where("p.author_id = {0}", authorId)
                 .orderBy("p.is_pinned", false)
                 .orderBy("p.created_at", false);
 
@@ -730,7 +730,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
         QueryWrapper wrapper = QueryWrapper.create()
                 .select("tag_id")
                 .from("post_tags")
-                .where("post_id = ?", postId);
+                .where("post_id = {0}", postId);
         
         List<PostTags> postTags = postsMapper.selectListByQueryAs(wrapper, 
                 (Class<PostTags>)(Class<?>)PostTags.class);

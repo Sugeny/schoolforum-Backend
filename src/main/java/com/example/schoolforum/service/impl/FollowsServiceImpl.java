@@ -116,7 +116,7 @@ public class FollowsServiceImpl extends ServiceImpl<FollowsMapper, Follows> impl
         QueryWrapper wrapper = QueryWrapper.create()
                 .select("f.*")
                 .from("follows").as("f")
-                .where("f.follower_id = ?", userId)
+                .where("f.follower_id = {0}", userId)
                 .orderBy("f.created_at", false);
         List<Follows> follows = getMapper().selectListByQuery(wrapper);
 
@@ -140,7 +140,7 @@ public class FollowsServiceImpl extends ServiceImpl<FollowsMapper, Follows> impl
         QueryWrapper wrapper = QueryWrapper.create()
                 .select("f.*")
                 .from("follows").as("f")
-                .where("f.following_id = ?", userId)
+                .where("f.following_id = {0}", userId)
                 .orderBy("f.created_at", false);
         List<Follows> follows = getMapper().selectListByQuery(wrapper);
 
@@ -165,7 +165,7 @@ public class FollowsServiceImpl extends ServiceImpl<FollowsMapper, Follows> impl
                 .select("u.*")
                 .from("follows").as("f")
                 .leftJoin("users").as("u").on("f.following_id = u.id")
-                .where("f.follower_id = ?", userId)
+                .where("f.follower_id = {0}", userId)
                 .orderBy("f.created_at", false);
         Page<Users> page = usersMapper.paginate(pageNumber, pageSize, wrapper);
         page.getRecords().forEach(u -> u.setPassword(null));
@@ -178,7 +178,7 @@ public class FollowsServiceImpl extends ServiceImpl<FollowsMapper, Follows> impl
                 .select("u.*")
                 .from("follows").as("f")
                 .leftJoin("users").as("u").on("f.follower_id = u.id")
-                .where("f.following_id = ?", userId)
+                .where("f.following_id = {0}", userId)
                 .orderBy("f.created_at", false);
         Page<Users> page = usersMapper.paginate(pageNumber, pageSize, wrapper);
         page.getRecords().forEach(u -> u.setPassword(null));

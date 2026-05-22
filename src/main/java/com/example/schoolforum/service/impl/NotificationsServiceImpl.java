@@ -33,7 +33,7 @@ public class NotificationsServiceImpl extends ServiceImpl<NotificationsMapper, N
     @Override
     public List<Notifications> listByUserId(Long userId) {
         QueryWrapper wrapper = QueryWrapper.create()
-                .where("user_id = ?", userId)
+                .where("user_id = {0}", userId)
                 .orderBy("created_at", false);
         return getMapper().selectListWithRelationsByQuery(wrapper);
     }
@@ -41,7 +41,7 @@ public class NotificationsServiceImpl extends ServiceImpl<NotificationsMapper, N
     @Override
     public Page<Notifications> list(Long userId, int pageNumber, int pageSize) {
         QueryWrapper wrapper = QueryWrapper.create()
-                .where("user_id = ?", userId)
+                .where("user_id = {0}", userId)
                 .orderBy("created_at", false);
         return getMapper().paginate(pageNumber, pageSize, wrapper);
     }
@@ -49,8 +49,8 @@ public class NotificationsServiceImpl extends ServiceImpl<NotificationsMapper, N
     @Override
     public long getUnreadCount(Long userId) {
         return getMapper().selectCountByQuery(QueryWrapper.create()
-                .where("user_id = ?", userId)
-                .and("is_read = ?", ReadStatus.UNREAD.getCode()));
+                .where("user_id = {0}", userId)
+                .and("is_read = {0}", ReadStatus.UNREAD.getCode()));
     }
 
     @Override
@@ -75,8 +75,8 @@ public class NotificationsServiceImpl extends ServiceImpl<NotificationsMapper, N
         notification.setIsRead(ReadStatus.READ);
         notification.setUpdatedAt(LocalDateTime.now());
         getMapper().updateByQuery(notification, QueryWrapper.create()
-                .where("user_id = ?", userId)
-                .and("is_read = ?", ReadStatus.UNREAD.getCode()));
+                .where("user_id = {0}", userId)
+                .and("is_read = {0}", ReadStatus.UNREAD.getCode()));
     }
 
     @Override

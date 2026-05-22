@@ -36,7 +36,7 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
     @Override
     public Page<PrivateMessage> list(Long conversationId, int page, int size) {
         QueryWrapper wrapper = QueryWrapper.create()
-                .where("conversation_id = ?", conversationId)
+                .where("conversation_id = {0}", conversationId)
                 .orderBy("created_at", false);
         return privateMessageMapper.paginateWithRelations(page, size, wrapper);
     }
@@ -86,8 +86,8 @@ public class PrivateMessageServiceImpl extends ServiceImpl<PrivateMessageMapper,
         update.setIsRead(true);
 
         QueryWrapper wrapper = QueryWrapper.create()
-                .where("conversation_id = ?", conversationId)
-                .and("receiver_id = ?", userId)
+                .where("conversation_id = {0}", conversationId)
+                .and("receiver_id = {0}", userId)
                 .and("is_read = 0");
 
         privateMessageMapper.updateByQuery(update, wrapper);

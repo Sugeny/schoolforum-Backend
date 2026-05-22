@@ -38,8 +38,8 @@ public class ConversationServiceImpl extends ServiceImpl<ConversationMapper, Con
 
         Conversation conversation = conversationMapper.selectOneByQuery(
                 QueryWrapper.create()
-                        .where("user1_id = ?", smallerId)
-                        .and("user2_id = ?", largerId)
+                        .where("user1_id = {0}", smallerId)
+                        .and("user2_id = {0}", largerId)
         );
 
         if (conversation == null) {
@@ -60,8 +60,8 @@ public class ConversationServiceImpl extends ServiceImpl<ConversationMapper, Con
     @Override
     public List<ConversationVO> getConversationList(Long userId) {
         QueryWrapper wrapper = QueryWrapper.create()
-                .where("(user1_id = ? AND user1_deleted = ?)", userId, false)
-                .or("(user2_id = ? AND user2_deleted = ?)", userId, false)
+                .where("(user1_id = {0} AND user1_deleted = {0})", userId, false)
+                .or("(user2_id = {0} AND user2_deleted = {0})", userId, false)
                 .orderBy("last_message_at", false);
 
         List<Conversation> conversations = conversationMapper.selectListWithRelationsByQuery(wrapper);
@@ -78,8 +78,8 @@ public class ConversationServiceImpl extends ServiceImpl<ConversationMapper, Con
     public int getTotalUnreadCount(Long userId) {
         List<Conversation> conversations = conversationMapper.selectListByQuery(
                 QueryWrapper.create()
-                        .where("user1_id = ?", userId)
-                        .or("user2_id = ?", userId)
+                        .where("user1_id = {0}", userId)
+                        .or("user2_id = {0}", userId)
         );
 
         int total = 0;

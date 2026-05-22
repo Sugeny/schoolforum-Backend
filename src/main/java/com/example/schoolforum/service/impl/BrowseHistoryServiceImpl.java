@@ -91,7 +91,7 @@ public class BrowseHistoryServiceImpl extends ServiceImpl<BrowseHistoryMapper, B
                 .from("browse_history").as("bh")
                 .leftJoin("posts").as("p").on("bh.post_id = p.id")
                 .leftJoin("users").as("u").on("p.author_id = u.id")
-                .where("bh.user_id = ?", userId)
+                .where("bh.user_id = {0}", userId)
                 .orderBy("bh.viewed_at", false);
         return postsMapper.paginate(pageNumber, pageSize, wrapper);
     }

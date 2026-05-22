@@ -144,7 +144,7 @@ public class CategoriesServiceImpl extends ServiceImpl<CategoriesMapper, Categor
         }
 
         QueryWrapper countWrapper = QueryWrapper.create()
-                .where("category_id = ?", categoryId);
+                .where("category_id = {0}", categoryId);
 
         long count = postsMapper.selectCountByQuery(countWrapper);
 

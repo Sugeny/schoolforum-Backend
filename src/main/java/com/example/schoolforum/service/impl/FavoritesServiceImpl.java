@@ -91,7 +91,7 @@ public class FavoritesServiceImpl extends ServiceImpl<FavoritesMapper, Favorites
         QueryWrapper wrapper = QueryWrapper.create()
                 .select("f.*")
                 .from("favorites").as("f")
-                .where("f.user_id = ?", userId)
+                .where("f.user_id = {0}", userId)
                 .orderBy("f.created_at", false);
         List<Favorites> favorites = getMapper().selectListByQuery(wrapper);
 
@@ -118,7 +118,7 @@ public class FavoritesServiceImpl extends ServiceImpl<FavoritesMapper, Favorites
                 .from("favorites").as("f")
                 .leftJoin("posts").as("p").on("f.post_id = p.id")
                 .leftJoin("users").as("u").on("p.author_id = u.id")
-                .where("f.user_id = ?", userId)
+                .where("f.user_id = {0}", userId)
                 .orderBy("f.created_at", false);
         return postsMapper.paginate(pageNumber, pageSize, wrapper);
     }
