@@ -79,6 +79,8 @@ public class CommentsServiceImpl extends ServiceImpl<CommentsMapper, Comments> i
         Integer commentCount = postStatsCache.getRealTimeCommentCount(postId);
         postStatsWebSocketHandler.broadcastCommentCount(postId, commentCount);
         
+        postsService.updateHotScore(postId);
+        
         log.info("评论创建成功: commentId={}, postId={}, authorId={}", comment.getId(), postId, authorId);
         
         Users author = usersService.getCachedUserById(authorId);
@@ -146,6 +148,8 @@ public class CommentsServiceImpl extends ServiceImpl<CommentsMapper, Comments> i
         
         Integer commentCount = postStatsCache.getRealTimeCommentCount(comment.getPostId());
         postStatsWebSocketHandler.broadcastCommentCount(comment.getPostId(), commentCount);
+        
+        postsService.updateHotScore(comment.getPostId());
         
         log.info("评论删除成功: commentId={}, userId={}", commentId, userId);
         

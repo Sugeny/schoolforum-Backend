@@ -42,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +109,10 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
                 .limit(limit)
                 .toList();
 
+        for (Posts post : posts) {
+            post.setHotScore(hotScoreCalculator.calculateScore(post));
+        }
+
         fillRealTimeStats(posts);
 
         try {
@@ -167,6 +172,14 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
                         .map(Long::parseLong)
                         .toList();
 
+                Map<Long, Double> scoreMap = new HashMap<>();
+                for (Long postId : postIds) {
+                    Double score = redisTemplate.opsForZSet().score(zSetKey, String.valueOf(postId));
+                    if (score != null) {
+                        scoreMap.put(postId, score);
+                    }
+                }
+
                 QueryWrapper wrapper = postQueryHelper.buildBaseQueryWithRelations()
                         .where(POSTS.ID.in(postIds))
                         .orderBy("p.is_pinned", false);
@@ -184,6 +197,15 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
                                 .orElse(null))
                         .filter(p -> p != null)
                         .toList();
+
+                for (Posts post : sortedPosts) {
+                    Double cachedScore = scoreMap.get(post.getId());
+                    if (cachedScore != null) {
+                        post.setHotScore(cachedScore);
+                    } else {
+                        post.setHotScore(hotScoreCalculator.calculateScore(post));
+                    }
+                }
 
                 page.setRecords(sortedPosts);
                 fillRealTimeStats(sortedPosts);
@@ -208,6 +230,10 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
             hotScoreCalculator.calculateScore(b),
             hotScoreCalculator.calculateScore(a)
         ));
+
+        for (Posts post : records) {
+            post.setHotScore(hotScoreCalculator.calculateScore(post));
+        }
 
         fillRealTimeStats(records);
         fillTagsForPosts(records);
@@ -509,6 +535,24 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
     }
 
     @Override
+    public void updateHotScore(Long postId) {
+        try {
+            Posts post = this.getById(postId);
+            if (post == null) {
+                return;
+            }
+            
+            double score = hotScoreCalculator.calculateScore(post);
+            String zSetKey = RedisCacheKey.hotRankZSetKey("all");
+            
+            redisTemplate.opsForZSet().add(zSetKey, String.valueOf(postId), score);
+            log.debug("更新帖子热度分数: postId={}, score={}", postId, score);
+        } catch (Exception e) {
+            log.warn("更新Redis热度分数失败: postId={}, error={}", postId, e.getMessage());
+        }
+    }
+
+    @Override
     @Transactional
     public void likePost(Long postId) {
         Posts post = this.getById(postId);
@@ -526,6 +570,8 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
             Integer likeCount = postStatsCache.getRealTimeLikeCount(postId);
             postStatsWebSocketHandler.broadcastLikeCount(postId, likeCount);
             
+            updateHotScore(postId);
+            
             log.info("帖子点赞: postId={}", postId);
         }
     }
@@ -542,6 +588,8 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
             
             Integer likeCount = postStatsCache.getRealTimeLikeCount(postId);
             postStatsWebSocketHandler.broadcastLikeCount(postId, likeCount);
+            
+            updateHotScore(postId);
             
             log.info("帖子取消点赞: postId={}", postId);
         }
@@ -561,6 +609,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
         int updated = postsMapper.update(update);
         if (updated > 0) {
             postStatsCache.incrementFavoriteCount(postId);
+            updateHotScore(postId);
             log.info("帖子收藏: postId={}", postId);
         }
     }
@@ -574,6 +623,7 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
         int updated = postsMapper.update(update);
         if (updated > 0) {
             postStatsCache.decrementFavoriteCount(postId);
+            updateHotScore(postId);
             log.info("帖子取消收藏: postId={}", postId);
         }
     }

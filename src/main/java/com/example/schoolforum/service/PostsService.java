@@ -53,4 +53,6 @@ public interface PostsService extends IService<Posts> {
     Page<Posts> listByAuthor(Long authorId, int pageNumber, int pageSize);
 
     List<Posts> getRelatedPosts(Long postId, int limit);
+
+    void updateHotScore(Long postId);
 }

@@ -91,4 +91,8 @@ public class Posts implements Serializable {
 
     @Schema(description = "更新时间")
     private LocalDateTime updatedAt;
+
+    @Column(ignore = true)
+    @Schema(description = "热度分数（仅用于热门榜显示）")
+    private Double hotScore;
 }
