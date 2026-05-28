@@ -56,6 +56,11 @@ public class CorsConfig {
             HttpServletRequest req = (HttpServletRequest) request;
             HttpServletResponse res = (HttpServletResponse) response;
 
+            String requestUri = req.getRequestURI();
+            if (requestUri.startsWith("/avatars/") || requestUri.startsWith("/post-images/")) {
+                res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+            }
+
             String origin = req.getHeader("Origin");
             if (origin != null) {
                 for (String allowedOrigin : origins) {
