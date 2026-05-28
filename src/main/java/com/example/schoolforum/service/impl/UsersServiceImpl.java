@@ -25,8 +25,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -367,24 +369,74 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
     }
 
     private void sendEmail(String to, CodeType codeType, String captcha) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailUsername);
-        message.setTo(to);
-        message.setSubject(codeType.getDesc()+":"+captcha);
-        message.setText(buildEmailContent(codeType, captcha));
-        mailSender.send(message);
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(mailUsername, "校园论坛");
+            helper.setTo(to);
+            helper.setSubject(codeType.getDesc() + "验证码：" + captcha);
+            helper.setText(buildEmailTextContent(codeType, captcha), buildEmailHtmlContent(codeType, captcha));
+            mailSender.send(message);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            throw new BusinessException("邮件发送失败");
+        }
     }
 
-    private String buildEmailContent(CodeType codeType, String captcha) {
+    private String buildEmailTextContent(CodeType codeType, String captcha) {
         return String.format("""
             亲爱的用户：
-            
-            您正在%s。
-            验证码：%s
-            %d分钟内有效，请尽快使用。
-            如非本人操作，请忽略此邮件。
-            
+
+            　　您正在%s。
+
+            　　你的code:
+
+            %s
+
+            　　%d分钟内有效，请尽快使用。如非本人操作，请忽略此邮件。
+
             校园论坛团队
+
+            此邮件由系统自动发送，请勿直接回复。
+            """, codeType.getDesc(), captcha, CAPTCHA_EXPIRE_TIME);
+    }
+
+    private String buildEmailHtmlContent(CodeType codeType, String captcha) {
+        return String.format("""
+            <!DOCTYPE html>
+            <html lang="zh-CN">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Microsoft YaHei', sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+                    .header { height: 8px; }
+                    .content { padding: 40px 30px; }
+                    .salutation { color: #1d2129; font-size: 16px; margin: 0 0 24px; }
+                    .paragraph { color: #1d2129; font-size: 14px; line-height: 1.8; margin: 0 0 16px; text-indent: 2em; }
+                    .code-label { color: #1d2129; font-size: 18px; margin: 0 0 16px; text-indent: 2em; }
+                    .code-wrapper { text-align: center; }
+                    .code { font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #1d2129; background-color: #f2f3f5; padding: 20px 30px; border-radius: 8px; display: inline-block; margin: 4px 0 24px; font-family: monospace; }
+                    .signature { color: #1d2129; font-size: 14px; line-height: 1.8; margin: 24px 0 0; text-align: right; }
+                    .footer { background-color: #f7f8fa; padding: 20px; text-align: center; color: #86909c; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header"></div>
+                    <div class="content">
+                        <p class="salutation">亲爱的用户：</p>
+                        <p class="paragraph">您正在%s。</p>
+                        <p class="code-label">你的code:</p>
+                        <div class="code-wrapper"><div class="code">%s</div></div>
+                        <p class="paragraph"><strong>%d分钟</strong>内有效，请尽快使用。如非本人操作，请忽略此邮件。</p>
+                        <p class="signature">校园论坛团队</p>
+                    </div>
+                    <div class="footer">
+                        <p>此邮件由系统自动发送，请勿直接回复。</p>
+                    </div>
+                </div>
+            </body>
+            </html>
             """, codeType.getDesc(), captcha, CAPTCHA_EXPIRE_TIME);
     }
 
