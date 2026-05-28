@@ -61,6 +61,7 @@ public class CorsConfig {
                 for (String allowedOrigin : origins) {
                     if (origin.equals(allowedOrigin)) {
                         res.setHeader("Access-Control-Allow-Origin", origin);
+                        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
                         if (allowCredentials) {
                             res.setHeader("Access-Control-Allow-Credentials", "true");
                         }
