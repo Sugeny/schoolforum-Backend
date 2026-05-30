@@ -1,12 +1,30 @@
 services:
+  mysql:
+    image: mysql:9
+    container_name: schoolforum-mysql
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-StrongRootPass2026!}
+      - MYSQL_DATABASE=schoolforum
+      - MYSQL_USER=schoolforum
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "13306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   manticore:
     image: manticoresearch/manticore:latest
     container_name: manticore
     restart: always
-    ports:
-      - "9306:9306"
-      - "9308:9308"
-      - "9312:9312"
     volumes:
       - manticore_data:/var/lib/manticore
     environment:
@@ -25,31 +43,33 @@ services:
     restart: always
     env_file:
       - .env
-    command: ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      manticore:
+        condition: service_healthy
     environment:
       - TZ=Asia/Shanghai
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_ADDRESS=0.0.0.0
-      - SERVER_PORT=8443
-      - SERVER_SSL_KEY_STORE=file:/app/ssl/keystore.p12
-      - SERVER_SSL_KEY_STORE_PASSWORD=${KEYSTORE_PASSWORD:-schoolforum2026}
-      - SERVER_SSL_KEY_STORE_TYPE=PKCS12
+      - SERVER_PORT=8085
       - JAVA_OPTS=-Xms256m -Xmx512m
       - MANTICORE_HOST=${MANTICORE_HOST:-http://manticore}
       - MANTICORE_PORT=${MANTICORE_PORT:-9308}
+      - DB_URL=jdbc:mysql://mysql:3306/schoolforum?characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     ports:
-      - "8443:8443"
+      - "8085:8085"
     volumes:
       - /var/log/schoolforum:/var/log/schoolforum
       - uploads_data:/app/uploads
-      - /opt/schoolforum/ssl:/app/ssl:ro
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8443"]
+      test: ["CMD", "nc", "-z", "localhost", "8085"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 40s
 
 volumes:
+  mysql_data:
   manticore_data:
   uploads_data:
