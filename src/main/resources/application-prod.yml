@@ -1,6 +1,6 @@
 server:
   address: ${SERVER_ADDRESS:0.0.0.0}
-  port: 8085
+  port: ${SERVER_PORT:8085}
 
 manticore:
   host: ${MANTICORE_HOST:http://127.0.0.1}
@@ -25,7 +25,7 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:38.76.209.225}
-      port: ${REDIS_PORT:6379}
+      port: ${REDIS_PORT:26739}
       password: ${REDIS_PASSWORD}
       database: 0
       timeout: 10s

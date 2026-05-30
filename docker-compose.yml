@@ -25,13 +25,18 @@ services:
     restart: always
     env_file:
       - .env
-    command: ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar app.jar"]
     environment:
       - TZ=Asia/Shanghai
       - SPRING_PROFILES_ACTIVE=prod
       - SERVER_ADDRESS=0.0.0.0
       - SERVER_PORT=8085
       - JAVA_OPTS=-Xms256m -Xmx512m
+      - DB_URL=${DB_URL:-jdbc:mysql://host.docker.internal:13306/schoolforum?characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+      - REDIS_HOST=${REDIS_HOST:-host.docker.internal}
+      - REDIS_PORT=${REDIS_PORT:-26739}
       - MANTICORE_HOST=${MANTICORE_HOST:-http://manticore}
       - MANTICORE_PORT=${MANTICORE_PORT:-9308}
     ports:
