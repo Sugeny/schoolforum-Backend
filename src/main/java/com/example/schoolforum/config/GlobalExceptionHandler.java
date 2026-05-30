@@ -6,7 +6,9 @@ import cn.dev33.satoken.exception.NotRoleException;
 import com.example.schoolforum.exception.BusinessException;
 import com.example.schoolforum.pojo.common.Result;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,7 +28,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NotLoginException.class)
-    public Result<Void> handleNotLoginException(NotLoginException e, HttpServletRequest request) {
+    public Result<Void> handleNotLoginException(NotLoginException e, HttpServletRequest request, HttpServletResponse response) {
         if (isSseRequest(request)) {
             log.warn("SSE 请求中 Sa-Token 上下文已失效: {}", e.getMessage());
             return null;
@@ -54,27 +56,30 @@ public class GlobalExceptionHandler {
         }
         
         log.warn("未登录异常: {}, 类型: {}", e.getMessage(), type);
-        return Result.error(message);
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        return Result.error(HttpStatus.UNAUTHORIZED.value(), message);
     }
 
     @ExceptionHandler(NotPermissionException.class)
-    public Result<Void> handleNotPermissionException(NotPermissionException e, HttpServletRequest request) {
+    public Result<Void> handleNotPermissionException(NotPermissionException e, HttpServletRequest request, HttpServletResponse response) {
         String permission = e.getPermission();
         log.warn("权限不足异常: 缺少权限 [{}]", permission);
         if (isSseRequest(request)) {
             return null;
         }
-        return Result.error("权限不足，缺少权限: " + permission);
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        return Result.error(HttpStatus.FORBIDDEN.value(), "权限不足，缺少权限: " + permission);
     }
 
     @ExceptionHandler(NotRoleException.class)
-    public Result<Void> handleNotRoleException(NotRoleException e, HttpServletRequest request) {
+    public Result<Void> handleNotRoleException(NotRoleException e, HttpServletRequest request, HttpServletResponse response) {
         String role = e.getRole();
         log.warn("角色不足异常: 缺少角色 [{}]", role);
         if (isSseRequest(request)) {
             return null;
         }
-        return Result.error("角色权限不足，缺少角色: " + role);
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        return Result.error(HttpStatus.FORBIDDEN.value(), "角色权限不足，缺少角色: " + role);
     }
 
     @ExceptionHandler(Exception.class)

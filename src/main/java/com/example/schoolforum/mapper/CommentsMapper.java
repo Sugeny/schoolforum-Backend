@@ -1,6 +1,8 @@
 package com.example.schoolforum.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 import com.mybatisflex.core.BaseMapper;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.example.schoolforum.pojo.Comments;
@@ -13,6 +15,9 @@ import com.example.schoolforum.pojo.Comments;
  */
 @Mapper
 public interface CommentsMapper extends BaseMapper<Comments> {
+
+    @Update("UPDATE comments SET like_count = like_count - 1 WHERE id = #{id} AND like_count > 0")
+    int decrementLikeCountIfPositive(@Param("id") Long id);
 
     default int countByPostId(Long postId) {
         return Math.toIntExact(selectCountByQuery(

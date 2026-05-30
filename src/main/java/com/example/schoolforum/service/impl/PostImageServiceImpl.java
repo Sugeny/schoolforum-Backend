@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -39,7 +38,7 @@ public class PostImageServiceImpl implements PostImageService {
 
         String contentType = file.getContentType();
         String allowedTypes = fileUploadProperties.getAllowedTypes();
-        if (contentType == null || !Arrays.asList(allowedTypes.split(",")).contains(contentType)) {
+        if (!FileUtil.isAllowedContentType(contentType, allowedTypes)) {
             throw new BusinessException("不支持的文件类型，仅支持: " + allowedTypes);
         }
 
@@ -48,10 +47,9 @@ public class PostImageServiceImpl implements PostImageService {
             throw new BusinessException("文件大小超过限制，最大允许: " + fileUploadProperties.getMaxSize());
         }
 
-        String originalFilename = file.getOriginalFilename();
-        String extension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String extension = FileUtil.imageExtensionForContentType(contentType);
+        if (extension.isEmpty()) {
+            throw new BusinessException("不支持的文件类型，仅支持: " + allowedTypes);
         }
         String newFilename = UUID.randomUUID().toString() + extension;
 
@@ -61,7 +59,7 @@ public class PostImageServiceImpl implements PostImageService {
                 Files.createDirectories(uploadPath);
             }
 
-            Path filePath = uploadPath.resolve(newFilename);
+            Path filePath = FileUtil.safeResolve(uploadPath, newFilename);
             Files.copy(file.getInputStream(), filePath);
 
             String imageUrl = IMAGE_URL_PREFIX + newFilename;
@@ -81,11 +79,16 @@ public class PostImageServiceImpl implements PostImageService {
         }
 
         String filename = imageUrl.substring(IMAGE_URL_PREFIX.length());
+        if (!FileUtil.isSafeFilename(filename)) {
+            throw new BusinessException("非法的图片路径");
+        }
         try {
             Path uploadPath = Paths.get(fileUploadProperties.getPostImagePath());
-            Path filePath = uploadPath.resolve(filename);
+            Path filePath = FileUtil.safeResolve(uploadPath, filename);
             Files.deleteIfExists(filePath);
             log.info("帖子图片删除成功: imageUrl={}", imageUrl);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(e.getMessage());
         } catch (IOException e) {
             log.error("帖子图片删除失败: imageUrl={}, error={}", imageUrl, e.getMessage());
         }

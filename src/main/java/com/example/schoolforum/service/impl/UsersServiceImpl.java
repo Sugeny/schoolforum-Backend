@@ -39,7 +39,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 import java.util.UUID;
@@ -300,7 +299,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
 
         String contentType = file.getContentType();
         String allowedTypes = fileUploadProperties.getAllowedTypes();
-        if (contentType == null || !Arrays.asList(allowedTypes.split(",")).contains(contentType)) {
+        if (!FileUtil.isAllowedContentType(contentType, allowedTypes)) {
             throw new BusinessException("不支持的文件类型，仅支持: " + allowedTypes);
         }
 
@@ -309,10 +308,9 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
             throw new BusinessException("文件大小超过限制，最大允许: " + fileUploadProperties.getMaxSize());
         }
 
-        String originalFilename = file.getOriginalFilename();
-        String extension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String extension = FileUtil.imageExtensionForContentType(contentType);
+        if (extension.isEmpty()) {
+            throw new BusinessException("不支持的文件类型，仅支持: " + allowedTypes);
         }
         String newFilename = UUID.randomUUID()+ extension;
 
@@ -322,7 +320,7 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
                 Files.createDirectories(uploadPath);
             }
 
-            Path filePath = uploadPath.resolve(newFilename);
+            Path filePath = FileUtil.safeResolve(uploadPath, newFilename);
             Files.copy(file.getInputStream(), filePath);
 
             Users user = this.getById(userId);
@@ -334,8 +332,12 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
             String oldAvatar = user.getAvatarUrl();
             if (oldAvatar != null && oldAvatar.contains("/avatars/")) {
                 String oldFilename = oldAvatar.substring(oldAvatar.lastIndexOf("/") + 1);
-                Path oldFilePath = uploadPath.resolve(oldFilename);
-                Files.deleteIfExists(oldFilePath);
+                if (FileUtil.isSafeFilename(oldFilename)) {
+                    Path oldFilePath = FileUtil.safeResolve(uploadPath, oldFilename);
+                    Files.deleteIfExists(oldFilePath);
+                } else {
+                    log.warn("跳过非法旧头像路径: userId={}, avatarUrl={}", userId, oldAvatar);
+                }
             }
 
             String avatarUrl = "/avatars/" + newFilename;

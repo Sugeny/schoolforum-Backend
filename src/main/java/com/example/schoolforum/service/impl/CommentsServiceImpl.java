@@ -261,10 +261,16 @@ public class CommentsServiceImpl extends ServiceImpl<CommentsMapper, Comments> i
     @Override
     @Transactional
     public void unlikeComment(Long commentId) {
-        Comments update = UpdateEntity.of(Comments.class, commentId);
-        UpdateWrapper<Comments> wrapper = UpdateWrapper.of(update);
-        wrapper.set(COMMENTS.LIKE_COUNT, COMMENTS.LIKE_COUNT.add(-1));
-        int updated = getMapper().update(update);
+        Comments comment = this.getById(commentId);
+        if (comment == null) {
+            throw new BusinessException("评论不存在");
+        }
+        if (comment.getLikeCount() == null || comment.getLikeCount() <= 0) {
+            log.debug("评论点赞数已为0，跳过取消点赞: commentId={}", commentId);
+            return;
+        }
+
+        int updated = getMapper().decrementLikeCountIfPositive(commentId);
         if (updated > 0) {
             log.info("评论取消点赞: commentId={}", commentId);
         }

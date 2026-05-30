@@ -579,10 +579,16 @@ public class PostsServiceImpl extends ServiceImpl<PostsMapper, Posts> implements
     @Override
     @Transactional
     public void unlikePost(Long postId) {
-        Posts update = UpdateEntity.of(Posts.class, postId);
-        UpdateWrapper<Posts> wrapper = UpdateWrapper.of(update);
-        wrapper.set(POSTS.LIKE_COUNT, POSTS.LIKE_COUNT.add(-1));
-        int updated = postsMapper.update(update);
+        Posts post = this.getById(postId);
+        if (post == null) {
+            throw new BusinessException("帖子不存在");
+        }
+        if (post.getLikeCount() == null || post.getLikeCount() <= 0) {
+            log.debug("帖子点赞数已为0，跳过取消点赞: postId={}", postId);
+            return;
+        }
+
+        int updated = postsMapper.decrementLikeCountIfPositive(postId);
         if (updated > 0) {
             postStatsCache.decrementLikeCount(postId);
             
