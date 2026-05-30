@@ -23,6 +23,6 @@ ENV TZ=Asia/Shanghai \
 EXPOSE 8085
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD nc -z localhost 8085 || exit 1
+  CMD nc -z localhost ${SERVER_PORT:-8085} || exit 1
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
